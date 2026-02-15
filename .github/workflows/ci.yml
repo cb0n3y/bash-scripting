@@ -21,3 +21,50 @@ jobs:
           else
             echo "No trailing whitespace."
           fi
+
+  validate-vagrantfiles:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+
+      - name: Install Vagrant
+        run: |
+          wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install vagrant
+
+      - name: Validate Vagrantfile(s)
+        run: |
+          set -euo pipefail
+          vfiles=$(find . -type f -name 'Vagrantfile')
+
+          if [ -z "$vfiles" ]; then
+            echo "No Vagrantfile found — skipping validation."
+            exit 0
+          fi
+
+          echo "Found Vagrantfile(s):"
+          echo "$vfiles"
+          echo
+
+          failures=0
+          for f in $vfiles; do
+            echo "==> Checking Ruby syntax for $f"
+            if ruby -c "$f"; then
+              echo "OK: $f"
+            else
+              echo "ERROR: Ruby syntax issue in $f"
+              failures=$((failures + 1))
+            fi
+          done
+
+          if [ "$failures" -ne 0 ]; then
+            echo "Vagrantfile validation failed for $failures file(s)."
+            exit 1
+          fi
+
+          echo "All Vagrantfile(s) passed Ruby syntax check."
