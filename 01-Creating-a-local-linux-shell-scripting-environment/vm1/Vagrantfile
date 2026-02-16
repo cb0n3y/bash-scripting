@@ -1,0 +1,44 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+BOX_CPUS = 2
+BOX_RAM = 4096
+VM01_IP = "192.168.56.10"
+VM02_IP = "192.168.56.11"
+SYNC_FOLDER_TYPE = "virtualbox"
+SYNC_FOLDER_SOURCE = File.expand_path("~/DevOps/code/vagrant_sync_folder")
+SYNC_FOLDER_TARGET = "/home/vagrant/scripts"
+
+
+Vagrant.configure("2") do |config|
+  config.vm.box_check_update = true
+
+  config.vm.define "vm01" do |vm01|
+    vm01.vm.box = "generic/centos9s"
+    vm01.vm.network "private_network", ip: VM01_IP
+    vm01.vm.synced_folder SYNC_FOLDER_SOURCE, SYNC_FOLDER_TARGET, type: SYNC_FOLDER_TYPE
+
+    vm01.vm.provider "virtualbox" do |vb|
+      # Display the VirtualBox GUI when booting the machine
+      vb.gui = false
+      vb.name = "linux-shell-scripting-environment"
+      vb.cpus = BOX_CPUS
+      vb.memory = BOX_RAM
+    end
+  end
+
+  config.vm.define "vm02" do |vm02|
+    vm02.vm.box = "generic/centos9s"
+    vm02.vm.network "private_network", ip: VM02_IP
+    vm02.vm.synced_folder SYNC_FOLDER_SOURCE, SYNC_FOLDER_TARGET, type: SYNC_FOLDER_TYPE
+
+    vm02.vm.provider "virtualbox" do |vb|
+      # Display the VirtualBox GUI when booting the machine
+      vb.gui = false
+      vb.name = "linux-shell-scripting-environment-2"
+      vb.cpus = BOX_CPUS
+      vb.memory = BOX_RAM
+    end
+  end
+end
